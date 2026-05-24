@@ -239,7 +239,7 @@ export default function HomePage() {
         <div className="brand-actions" aria-label="Utilities">
           <button type="button" className="brand-icon-btn" title="Notifications">◔</button>
           <button type="button" className="brand-icon-btn" title="Settings">⚙</button>
-          <button type="button" className="brand-avatar" title="Profile">HL</button>
+          <button type="button" className="brand-avatar" title="Profile">YK</button>
         </div>
       </header>
 
