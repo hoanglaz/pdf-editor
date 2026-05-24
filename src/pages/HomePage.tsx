@@ -125,19 +125,18 @@ export default function HomePage() {
       // Paste (Ctrl/Cmd + V)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
         const copied = clipboardRef.current
-        if (copied) {
-          // Tạo field mới với id mới, vị trí lệch nhẹ
-          const offset = 24
-          const newField: EditablePdfField = {
-            ...copied,
-            id: globalThis.crypto?.randomUUID?.() ?? `field-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-            x: copied.x + offset,
-            y: copied.y + offset,
-            name: getNextFieldName(form.fields, copied.type),
-          }
-          setForm(current => ({ ...current, fields: [...current.fields, newField] }))
-          setActiveFieldId(newField.id)
+        if (!copied) return
+        // Tạo field mới với id mới, vị trí lệch nhẹ
+        const offset = 24
+        const newField: EditablePdfField = {
+          ...copied,
+          id: globalThis.crypto?.randomUUID?.() ?? `field-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          x: copied.x + offset,
+          y: copied.y + offset,
+          name: getNextFieldName(form.fields, copied.type),
         }
+        setForm(current => ({ ...current, fields: [...current.fields, newField] }))
+        setActiveFieldId(newField.id)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -155,7 +154,8 @@ export default function HomePage() {
   }
   function base64ToFile(base64: string, fileName: string, fileType: string): File {
     const arr = base64.split(',')
-    const mime = arr[0].match(/:(.*?);/)[1]
+    const match = arr[0].match(/:(.*?);/)
+    const mime = match ? match[1] : ''
     const bstr = atob(arr[1])
     let n = bstr.length
     const u8arr = new Uint8Array(n)
