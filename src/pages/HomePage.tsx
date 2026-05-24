@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { getDocument } from 'pdfjs-dist'
 import FieldProperties from '../components/FieldProperties/FieldProperties'
 import FieldSidebar from '../components/FieldSidebar/FieldSidebar'
 import PdfCanvasEditor from '../components/PdfCanvasEditor/PdfCanvasEditor'
@@ -88,7 +89,15 @@ function collectValidationMessages(validation: TemplateValidationResult) {
 }
 
 export default function HomePage() {
-  const [form, setForm] = useState<TemplateFormState>(EMPTY_FORM)
+  // Clipboard tạm cho copy/paste field
+  const clipboardRef = useRef<EditablePdfField | null>(null)
+  const [form, setForm] = useState<TemplateFormState>(() => {
+    try {
+      const saved = localStorage.getItem('pdf-editor-form')
+      if (saved) return JSON.parse(saved)
+    } catch {}
+    return EMPTY_FORM
+  })
   const [validation, setValidation] = useState<TemplateValidationResult>(EMPTY_VALIDATION)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [pageCount, setPageCount] = useState(0)
@@ -101,12 +110,92 @@ export default function HomePage() {
   const payload = useMemo(() => mapFormToPayload(form), [form])
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setPlacementMode(null) }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape: hủy chế độ placement
+      if (e.key === 'Escape') setPlacementMode(null)
+
+      // Copy (Ctrl/Cmd + C)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        if (activeFieldId) {
+          const field = form.fields.find(f => f.id === activeFieldId)
+          if (field) clipboardRef.current = field
+        }
+      }
+
+      // Paste (Ctrl/Cmd + V)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        const copied = clipboardRef.current
+        if (copied) {
+          // Tạo field mới với id mới, vị trí lệch nhẹ
+          const offset = 24
+          const newField: EditablePdfField = {
+            ...copied,
+            id: globalThis.crypto?.randomUUID?.() ?? `field-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+            x: copied.x + offset,
+            y: copied.y + offset,
+            name: getNextFieldName(form.fields, copied.type),
+          }
+          setForm(current => ({ ...current, fields: [...current.fields, newField] }))
+          setActiveFieldId(newField.id)
+        }
+      }
+    }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [activeFieldId, form.fields])
+
+  // Helper: convert File <-> base64
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+  function base64ToFile(base64: string, fileName: string, fileType: string): File {
+    const arr = base64.split(',')
+    const mime = arr[0].match(/:(.*?);/)[1]
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) u8arr[n] = bstr.charCodeAt(n)
+    return new File([u8arr], fileName, { type: fileType || mime })
+  }
+
+  // Khôi phục file và form từ localStorage khi load lại trang
+  useEffect(() => {
+    const savedFile = localStorage.getItem('pdf-editor-file')
+    const savedFileMeta = localStorage.getItem('pdf-editor-file-meta')
+    if (savedFile && savedFileMeta) {
+      try {
+        const meta = JSON.parse(savedFileMeta)
+        const file = base64ToFile(savedFile, meta.name, meta.type)
+        setSelectedFile(file)
+      } catch {}
+    }
   }, [])
 
-  const handleFileChange = (file: File | null) => {
+  // Lưu form và file vào localStorage mỗi khi thay đổi
+  useEffect(() => {
+    try {
+      localStorage.setItem('pdf-editor-form', JSON.stringify(form))
+    } catch {}
+  }, [form])
+  useEffect(() => {
+    if (selectedFile) {
+      fileToBase64(selectedFile).then((base64) => {
+        localStorage.setItem('pdf-editor-file', base64)
+        localStorage.setItem('pdf-editor-file-meta', JSON.stringify({ name: selectedFile.name, type: selectedFile.type }))
+      })
+    } else {
+      localStorage.removeItem('pdf-editor-file')
+      localStorage.removeItem('pdf-editor-file-meta')
+    }
+  }, [selectedFile])
+
+  // Detect AcroForm fields from PDF and add to fields
+  const handleFileChange = async (file: File | null) => {
     if (file && !isPdfFile(file)) {
       setValidation((current) => ({ ...current, file: 'Only PDF files are supported.' }))
       return
@@ -119,8 +208,52 @@ export default function HomePage() {
           ? current
           : { ...current, templateName: nextTemplateName }
       ))
+      // Detect form fields
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        // @ts-ignore
+        const pdf = await getDocument({ data: arrayBuffer }).promise
+        const fields: EditablePdfField[] = []
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum)
+          const annotations = await page.getAnnotations()
+          annotations.forEach((ann) => {
+            if (ann.subtype === 'Widget' && ann.fieldType) {
+              // Map PDF field type to our FieldType
+              let type: FieldType | undefined
+              if (ann.fieldType === 'Tx') type = 'TEXT'
+              if (ann.fieldType === 'Btn' && ann.checkBox) type = 'CHECKBOX'
+              if (!type) return
+              // Calculate geometry
+              const rect = ann.rect // [llx, lly, urx, ury]
+              const x = rect[0]
+              const y = rect[1]
+              const width = rect[2] - rect[0]
+              const height = rect[3] - rect[1]
+              fields.push({
+                id: globalThis.crypto?.randomUUID?.() ?? `field-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                name: ann.fieldName || `${type.toLowerCase()}Field${fields.length + 1}`,
+                type,
+                page: pageNum - 1,
+                x,
+                y,
+                width,
+                height,
+                required: !!ann.required,
+                multiline: ann.multiline,
+                defaultValue: ann.fieldValue ?? (type === 'CHECKBOX' ? (ann.fieldValue ? 'true' : 'false') : ''),
+              })
+            }
+          })
+        }
+        setForm((current) => ({ ...current, fields }))
+      } catch (e) {
+        // Nếu lỗi vẫn cho upload bình thường
+        setForm((current) => ({ ...current, fields: [] }))
+      }
+    } else {
+      setForm((current) => ({ ...current, fields: [] }))
     }
-
     setSelectedFile(file)
     setValidation((current) => ({ ...current, file: undefined, templateName: undefined }))
   }
