@@ -46,7 +46,7 @@ export interface FieldValidationErrors {
   y?: string
   width?: string
   height?: string
-  // multiline?: string // not used, always boolean
+  multiline?: string
   defaultValue?: string
 }
 
