@@ -26,13 +26,13 @@ const EMPTY_VALIDATION: TemplateValidationResult = {
 }
 
 const TEXT_FIELD_HEIGHT = 24
-const MIN_TEXT_FIELD_WIDTH = 72
+const MIN_TEXT_FIELD_WIDTH = 1
 const MAX_TEXT_FIELD_WIDTH = 144
 const APPROX_TEXT_CHAR_WIDTH = 8
 
 function getDefaultTextFieldWidth(text: string) {
   const nextWidth = text.length * APPROX_TEXT_CHAR_WIDTH + 28
-  return Math.min(Math.max(nextWidth, MIN_TEXT_FIELD_WIDTH), MAX_TEXT_FIELD_WIDTH)
+  return Math.min(Math.max(nextWidth, 1), MAX_TEXT_FIELD_WIDTH)
 }
 
 function getTemplateNameFromFile(file: File) {
@@ -269,7 +269,7 @@ export default function HomePage() {
           return {
             ...field,
             type: nextType,
-            width: Math.max(field.width, MIN_TEXT_FIELD_WIDTH),
+            // Không ép width >= MIN_TEXT_FIELD_WIDTH nữa
             multiline: typeof field.multiline === 'boolean' ? field.multiline : false,
           }
         }
@@ -278,7 +278,7 @@ export default function HomePage() {
           return {
             ...field,
             defaultValue: nextDefaultValue,
-            width: Math.max(field.width, getDefaultTextFieldWidth(nextDefaultValue)),
+            // Không ép width >= getDefaultTextFieldWidth nữa
           }
         }
         return { ...field, [key]: value }
