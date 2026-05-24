@@ -27,13 +27,13 @@ const EMPTY_VALIDATION: TemplateValidationResult = {
 
 const TEXT_FIELD_HEIGHT = 24
 const MIN_TEXT_FIELD_WIDTH = 18 // Match checkbox width
-const MAX_TEXT_FIELD_WIDTH = 144
-const APPROX_TEXT_CHAR_WIDTH = 8
+// const MAX_TEXT_FIELD_WIDTH = 144
+// const APPROX_TEXT_CHAR_WIDTH = 8
 
-function getDefaultTextFieldWidth(text: string) {
-  const nextWidth = text.length * APPROX_TEXT_CHAR_WIDTH + 28
-  return Math.min(Math.max(nextWidth, 1), MAX_TEXT_FIELD_WIDTH)
-}
+// function getDefaultTextFieldWidth(text: string) {
+//   const nextWidth = text.length * APPROX_TEXT_CHAR_WIDTH + 28
+//   return Math.min(Math.max(nextWidth, 1), MAX_TEXT_FIELD_WIDTH)
+// }
 
 function getTemplateNameFromFile(file: File) {
   return file.name.replace(/\.pdf$/i, '').trim()
