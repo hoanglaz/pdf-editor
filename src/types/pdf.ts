@@ -9,7 +9,7 @@ export interface PdfField {
   width: number
   height: number
   required: boolean
-  multiline?: boolean
+  multiline?: boolean // always boolean for TEXT fields
   defaultValue?: string
 }
 
@@ -46,7 +46,7 @@ export interface FieldValidationErrors {
   y?: string
   width?: string
   height?: string
-  multiline?: string
+  // multiline?: string // not used, always boolean
   defaultValue?: string
 }
 

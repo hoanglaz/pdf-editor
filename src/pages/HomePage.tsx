@@ -75,7 +75,7 @@ function createField(
     width: MIN_TEXT_FIELD_WIDTH, // default width nhỏ nhất
     height: TEXT_FIELD_HEIGHT,
     required: false,
-    multiline: false,
+    multiline: false, // always default to false
     defaultValue: '',
   }
 }
@@ -240,7 +240,7 @@ export default function HomePage() {
                 width: type === 'TEXT' ? MIN_TEXT_FIELD_WIDTH : width,
                 height,
                 required: !!ann.required,
-                multiline: ann.multiline,
+                multiline: type === 'TEXT' ? (typeof ann.multiline === 'boolean' ? ann.multiline : false) : undefined,
                 defaultValue: ann.fieldValue ?? (type === 'CHECKBOX' ? (ann.fieldValue ? 'true' : 'false') : ''),
               })
             }
@@ -270,7 +270,7 @@ export default function HomePage() {
             ...field,
             type: nextType,
             // Không ép width >= MIN_TEXT_FIELD_WIDTH nữa
-            multiline: typeof field.multiline === 'boolean' ? field.multiline : false,
+            multiline: false,
           }
         }
         if (key === 'defaultValue' && field.type === 'TEXT') {
@@ -278,6 +278,7 @@ export default function HomePage() {
           return {
             ...field,
             defaultValue: nextDefaultValue,
+            multiline: typeof field.multiline === 'boolean' ? field.multiline : false,
             // Không ép width >= getDefaultTextFieldWidth nữa
           }
         }

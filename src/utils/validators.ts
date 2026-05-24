@@ -122,7 +122,7 @@ export function mapFormToPayload(form: TemplateFormState): PdfTemplatePayload {
 
       return {
         ...baseField,
-        multiline: Boolean(field.multiline),
+        multiline: typeof field.multiline === 'boolean' ? field.multiline : false,
       }
     }),
   }
