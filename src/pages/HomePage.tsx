@@ -24,14 +24,59 @@ const EMPTY_VALIDATION: TemplateValidationResult = {
   fieldErrors: {},
 }
 
-function createField(type: FieldType, page = 0, x?: number, y?: number): EditablePdfField {
-  const id = globalThis.crypto?.randomUUID?.() ?? `field-${Date.now()}-${Math.random().toString(16).slice(2)}`
+const TEXT_FIELD_HEIGHT = 24
+const MIN_TEXT_FIELD_WIDTH = 72
+const MAX_TEXT_FIELD_WIDTH = 144
+const APPROX_TEXT_CHAR_WIDTH = 8
 
-  if (type === 'CHECKBOX') {
-    return { id, name: '', type, page, x: x ?? 80, y: y ?? 600, width: 18, height: 18, required: false, defaultValue: 'false' }
+function getDefaultTextFieldWidth(text: string) {
+  const nextWidth = text.length * APPROX_TEXT_CHAR_WIDTH + 28
+  return Math.min(Math.max(nextWidth, MIN_TEXT_FIELD_WIDTH), MAX_TEXT_FIELD_WIDTH)
+}
+
+function getTemplateNameFromFile(file: File) {
+  return file.name.replace(/\.pdf$/i, '').trim()
+}
+
+function getNextFieldName(fields: EditablePdfField[], type: FieldType) {
+  const prefix = type === 'CHECKBOX' ? 'checkboxField' : 'textField'
+  const usedNames = new Set(fields.map((field) => field.name))
+  let index = 1
+
+  while (usedNames.has(`${prefix}${index}`)) {
+    index += 1
   }
 
-  return { id, name: '', type, page, x: x ?? 80, y: y ?? 650, width: 200, height: 24, required: false, multiline: false, defaultValue: '' }
+  return `${prefix}${index}`
+}
+
+function createField(
+  fields: EditablePdfField[],
+  type: FieldType,
+  page = 0,
+  x?: number,
+  y?: number,
+): EditablePdfField {
+  const id = globalThis.crypto?.randomUUID?.() ?? `field-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  const name = getNextFieldName(fields, type)
+
+  if (type === 'CHECKBOX') {
+    return { id, name, type, page, x: x ?? 80, y: y ?? 600, width: 18, height: 18, required: false, defaultValue: 'false' }
+  }
+
+  return {
+    id,
+    name,
+    type,
+    page,
+    x: x ?? 80,
+    y: y ?? 650,
+    width: MIN_TEXT_FIELD_WIDTH,
+    height: TEXT_FIELD_HEIGHT,
+    required: false,
+    multiline: false,
+    defaultValue: '',
+  }
 }
 
 function collectValidationMessages(validation: TemplateValidationResult) {
@@ -66,8 +111,18 @@ export default function HomePage() {
       setValidation((current) => ({ ...current, file: 'Only PDF files are supported.' }))
       return
     }
+
+    if (file) {
+      const nextTemplateName = getTemplateNameFromFile(file)
+      setForm((current) => (
+        current.templateName.trim()
+          ? current
+          : { ...current, templateName: nextTemplateName }
+      ))
+    }
+
     setSelectedFile(file)
-    setValidation((current) => ({ ...current, file: undefined }))
+    setValidation((current) => ({ ...current, file: undefined, templateName: undefined }))
   }
 
   const handleFieldChange = <K extends keyof EditablePdfField>(fieldId: string, key: K, value: EditablePdfField[K]) => {
@@ -78,7 +133,20 @@ export default function HomePage() {
         if (key === 'type') {
           const nextType = value as FieldType
           if (nextType === 'CHECKBOX') return { ...field, type: nextType, defaultValue: field.defaultValue || 'false', multiline: undefined }
-          return { ...field, type: nextType, multiline: typeof field.multiline === 'boolean' ? field.multiline : false }
+          return {
+            ...field,
+            type: nextType,
+            width: Math.max(field.width, MIN_TEXT_FIELD_WIDTH),
+            multiline: typeof field.multiline === 'boolean' ? field.multiline : false,
+          }
+        }
+        if (key === 'defaultValue' && field.type === 'TEXT') {
+          const nextDefaultValue = String(value ?? '')
+          return {
+            ...field,
+            defaultValue: nextDefaultValue,
+            width: Math.max(field.width, getDefaultTextFieldWidth(nextDefaultValue)),
+          }
         }
         return { ...field, [key]: value }
       }),
@@ -102,10 +170,12 @@ export default function HomePage() {
   }
 
   const handlePlaceField = (type: FieldType, page: number, x: number, y: number) => {
-    const newField = createField(type, page, x, y)
-    setForm((current) => ({ ...current, fields: [...current.fields, newField] }))
-    setActiveFieldId(newField.id)
-    setPlacementMode(null)
+    setForm((current) => {
+      const newField = createField(current.fields, type, page, x, y)
+      setActiveFieldId(newField.id)
+      setPlacementMode(null)
+      return { ...current, fields: [...current.fields, newField] }
+    })
   }
 
   const handleConvertRequest = async () => {
@@ -153,7 +223,7 @@ export default function HomePage() {
     <div className="editor-shell">
       <header className="editor-brandbar">
         <div className="brand-left">
-          <span className="editor-logo">DocuFlow</span>
+          <span className="editor-logo">PDF Tool</span>
           <nav className="brand-nav" aria-label="Primary">
             <button type="button" className="brand-link active">Dashboard</button>
             <button type="button" className="brand-link">Workflows</button>
@@ -186,35 +256,23 @@ export default function HomePage() {
           type="button"
           className={`topbar-tool-btn${placementMode === 'TEXT' ? ' active' : ''}`}
           onClick={() => handleStartPlacement('TEXT')}
-          title="Text field - click on PDF to place"
+          title="Add text field - click on PDF to place"
         >
-          <span className="topbar-tool-icon">Tt</span>
-          Text
+          <span className="topbar-tool-icon">T</span>
+          Add Text Field
         </button>
         <button
           type="button"
           className={`topbar-tool-btn${placementMode === 'CHECKBOX' ? ' active' : ''}`}
           onClick={() => handleStartPlacement('CHECKBOX')}
-          title="Checkbox - click on PDF to place"
+          title="Add checkbox - click on PDF to place"
         >
-          <span className="topbar-tool-icon">✦</span>
-          Highlight
+          <span className="topbar-tool-icon">☑</span>
+          Add Checkbox
         </button>
         <button type="button" className="topbar-tool-btn muted" onClick={() => fileInputRef.current?.click()}>
           <span className="topbar-tool-icon">↥</span>
           {selectedFile ? 'Replace PDF' : 'Upload PDF'}
-        </button>
-        <button type="button" className="topbar-tool-btn muted">
-          <span className="topbar-tool-icon">⌁</span>
-          Draw
-        </button>
-        <button type="button" className="topbar-tool-btn muted">
-          <span className="topbar-tool-icon">▢</span>
-          Shapes
-        </button>
-        <button type="button" className="topbar-tool-btn muted">
-          <span className="topbar-tool-icon">✍</span>
-          Signature
         </button>
 
         {placementMode && <span className="topbar-placement-hint">Click on page to place - Esc to cancel</span>}
@@ -275,6 +333,7 @@ export default function HomePage() {
             activeFieldId={activeFieldId}
             placementMode={placementMode}
             onSelectField={setActiveFieldId}
+            onFieldChange={handleFieldChange}
             onFieldGeometryChange={handleFieldGeometryChange}
             onPlaceField={handlePlaceField}
             onPageCountChange={setPageCount}

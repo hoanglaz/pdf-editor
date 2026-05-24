@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import './pdf-field-checkbox-input.css';
 
 :root {
   --bg: #f5efe3;
@@ -496,21 +497,28 @@ button {
 
 .pdf-field-overlay {
   position: absolute;
-  display: block;
+  display: flex;
+  align-items: center;
   border: 2px solid rgba(199, 92, 27, 0.9);
-  border-radius: 10px;
-  background: rgba(199, 92, 27, 0.14);
-  padding: 6px 10px;
+  border-radius: 4px;
+  background: rgba(255, 250, 241, 0.88);
+  padding: 2px 12px 2px 4px;
   text-align: left;
   cursor: move;
   touch-action: none;
   overflow: visible;
 }
 
+.pdf-field-overlay.text {
+  min-width: 72px;
+}
+
 .pdf-field-overlay.checkbox {
   border-style: dashed;
   background: rgba(31, 122, 82, 0.14);
   border-color: rgba(31, 122, 82, 0.95);
+  border-radius: 6px;
+  padding: 0;
 }
 
 .pdf-field-overlay.active {
@@ -521,15 +529,20 @@ button {
   box-shadow: 0 0 0 4px rgba(31, 122, 82, 0.18);
 }
 
-.pdf-field-label {
-  display: inline-flex;
-  align-items: center;
-  min-height: 100%;
+.pdf-field-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
   color: var(--text-strong);
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  pointer-events: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  outline: none;
+  padding: 0;
+}
+
+.pdf-field-input::placeholder {
+  color: transparent;
 }
 
 .pdf-field-resize-handle {

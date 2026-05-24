@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import type { EditablePdfField, FieldType, PdfFieldGeometry } from '../../types/pdf'
 
@@ -10,6 +10,11 @@ interface PdfCanvasEditorProps {
   activeFieldId: string | null
   placementMode: FieldType | null
   onSelectField: (fieldId: string) => void
+  onFieldChange: <K extends keyof EditablePdfField>(
+    fieldId: string,
+    key: K,
+    value: EditablePdfField[K],
+  ) => void
   onFieldGeometryChange: (fieldId: string, geometry: PdfFieldGeometry) => void
   onPlaceField: (type: FieldType, page: number, x: number, y: number) => void
   onPageCountChange?: (count: number) => void
@@ -35,6 +40,8 @@ interface PointerOperation {
 
 const MIN_FIELD_SIZE = 12
 const MAX_VIEWER_WIDTH = 760
+const DEFAULT_TEXT_FIELD_WIDTH = 72
+const DEFAULT_TEXT_FIELD_HEIGHT = 24
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
@@ -46,6 +53,7 @@ export default function PdfCanvasEditor({
   activeFieldId,
   placementMode,
   onSelectField,
+  onFieldChange,
   onFieldGeometryChange,
   onPlaceField,
   onPageCountChange,
@@ -138,11 +146,6 @@ export default function PdfCanvasEditor({
     }
   }, [containerWidth, fields, onFieldGeometryChange, operation, pageMetrics])
 
-  const activeField = useMemo(
-    () => fields.find((field) => field.id === activeFieldId) ?? null,
-    [activeFieldId, fields],
-  )
-
   const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setPageCount(numPages)
     setPageMetrics({})
@@ -183,28 +186,14 @@ export default function PdfCanvasEditor({
     const clickY = (event.clientY - frame.top) / scale
 
     if (placementMode) {
-      const defW = placementMode === 'CHECKBOX' ? 18 : 200
-      const defH = placementMode === 'CHECKBOX' ? 18 : 24
+      // Set CHECKBOX default size to 28x28 to fit overlay
+      const defW = placementMode === 'CHECKBOX' ? 28 : DEFAULT_TEXT_FIELD_WIDTH
+      const defH = placementMode === 'CHECKBOX' ? 28 : DEFAULT_TEXT_FIELD_HEIGHT
       const nextX = clamp(clickX - defW / 2, 0, pageMetric.width - defW)
       const topEdge = clamp(clickY - defH / 2, 0, pageMetric.height - defH)
       onPlaceField(placementMode, pageIndex, roundValue(nextX), roundValue(pageMetric.height - topEdge - defH))
       return
     }
-
-    if (!activeField) {
-      return
-    }
-
-    const nextX = clamp(clickX - activeField.width / 2, 0, pageMetric.width - activeField.width)
-    const top = clamp(clickY - activeField.height / 2, 0, pageMetric.height - activeField.height)
-
-    onFieldGeometryChange(activeField.id, {
-      page: pageIndex,
-      x: roundValue(nextX),
-      y: roundValue(pageMetric.height - top - activeField.height),
-      width: activeField.width,
-      height: activeField.height,
-    })
   }
 
   const renderWidth = getRenderWidth(containerWidth)
@@ -263,16 +252,26 @@ export default function PdfCanvasEditor({
                               const isActive = field.id === activeFieldId
 
                               return (
-                                <button
+                                <div
                                   key={field.id}
-                                  type="button"
+                                  role="button"
+                                  tabIndex={0}
                                   className={`pdf-field-overlay ${field.type === 'CHECKBOX' ? 'checkbox' : 'text'}${isActive ? ' active' : ''}`}
                                   style={{ left, top, width, height }}
                                   onClick={(event) => {
                                     event.stopPropagation()
                                     onSelectField(field.id)
                                   }}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                      event.preventDefault()
+                                      onSelectField(field.id)
+                                    }
+                                  }}
                                   onPointerDown={(event) => {
+                                    if (event.target instanceof HTMLInputElement) {
+                                      return
+                                    }
                                     event.stopPropagation()
                                     onSelectField(field.id)
                                     setOperation({
@@ -289,7 +288,37 @@ export default function PdfCanvasEditor({
                                     })
                                   }}
                                 >
-                                  <span className="pdf-field-label">{field.name || field.type}</span>
+                                  {field.type === 'TEXT' ? (
+                                    <input
+                                      className="pdf-field-input"
+                                      value={field.defaultValue ?? ''}
+                                      onClick={(event) => {
+                                        event.stopPropagation()
+                                        onSelectField(field.id)
+                                      }}
+                                      onPointerDown={(event) => {
+                                        event.stopPropagation()
+                                        onSelectField(field.id)
+                                      }}
+                                      onChange={(event) => onFieldChange(field.id, 'defaultValue', event.target.value)}
+                                      placeholder=""
+                                    />
+                                  ) : null}
+                                  {field.type === 'CHECKBOX' ? (
+                                    <input
+                                      type="checkbox"
+                                      className="pdf-field-checkbox-input"
+                                      checked={field.defaultValue === 'true'}
+                                      onChange={(event) => {
+                                        onFieldChange(field.id, 'defaultValue', event.target.checked ? 'true' : 'false')
+                                      }}
+                                      onClick={(event) => {
+                                        event.stopPropagation()
+                                        onSelectField(field.id)
+                                      }}
+                                      style={{ width: '100%', height: '100%', minWidth: 0, minHeight: 0 }}
+                                    />
+                                  ) : null}
                                   <span
                                     role="presentation"
                                     className="pdf-field-resize-handle"
@@ -310,7 +339,7 @@ export default function PdfCanvasEditor({
                                       })
                                     }}
                                   />
-                                </button>
+                                </div>
                               )
                             })}
                         </div>

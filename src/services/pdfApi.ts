@@ -47,7 +47,7 @@ export async function exportTemplate(template: PdfTemplatePayload) {
 export async function convertPdf(file: File, template: PdfTemplatePayload) {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('template', JSON.stringify(template))
+  formData.append('template', new Blob([JSON.stringify(template)], { type: 'application/json' }))
 
   const response = await http.post(`${PDF_API_BASE_PATH}/convert`, formData, {
     headers: {

@@ -61,30 +61,6 @@ export default function FieldProperties({ field, onChange }: FieldPropertiesProp
       </div>
 
       <div className="prop-row">
-        <label className="prop-label prop-label--inline">
-          <input
-            type="checkbox"
-            checked={field.required}
-            onChange={(e) => onChange(field.id, 'required', e.target.checked)}
-          />
-          Required
-        </label>
-      </div>
-
-      {field.type === 'TEXT' && (
-        <div className="prop-row">
-          <label className="prop-label prop-label--inline">
-            <input
-              type="checkbox"
-              checked={Boolean(field.multiline)}
-              onChange={(e) => onChange(field.id, 'multiline', e.target.checked)}
-            />
-            Multiline
-          </label>
-        </div>
-      )}
-
-      <div className="prop-row">
         <label className="prop-label" htmlFor="prop-default">
           Default value
         </label>

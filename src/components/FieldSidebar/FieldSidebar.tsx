@@ -36,25 +36,25 @@ export default function FieldSidebar({
       </div>
 
       <div className="sidebar-section">
-        <p className="sidebar-section-title">Annotate tools</p>
+        <p className="sidebar-section-title">Field tools</p>
         <div className="sidebar-tools">
           <button
             type="button"
             className={`sidebar-tool-btn${placementMode === 'TEXT' ? ' active' : ''}`}
             onClick={() => onStartPlacement('TEXT')}
-            title="Text field — click on PDF to place"
+            title="Add text field — click on PDF to place"
           >
             <span className="sidebar-tool-icon">T</span>
-            <span className="sidebar-tool-label">Text</span>
+            <span className="sidebar-tool-label">Text Field</span>
           </button>
           <button
             type="button"
             className={`sidebar-tool-btn${placementMode === 'CHECKBOX' ? ' active' : ''}`}
             onClick={() => onStartPlacement('CHECKBOX')}
-            title="Checkbox — click on PDF to place"
+            title="Add checkbox — click on PDF to place"
           >
-            <span className="sidebar-tool-icon">✦</span>
-            <span className="sidebar-tool-label">Highlight</span>
+            <span className="sidebar-tool-icon">☑</span>
+            <span className="sidebar-tool-label">Checkbox</span>
           </button>
         </div>
       </div>

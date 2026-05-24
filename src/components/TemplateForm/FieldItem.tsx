@@ -165,34 +165,6 @@ export default function FieldItem({ field, index, errors, isActive, onChange, on
           {errors?.height ? <span className="error-text">{errors.height}</span> : null}
         </div>
 
-        <label className="checkbox-row">
-          <input
-            className="checkbox-input"
-            type="checkbox"
-            checked={field.required}
-            onChange={(event) => onChange(field.id, 'required', event.target.checked)}
-          />
-          <span>Required field</span>
-        </label>
-
-        {field.type === 'TEXT' ? (
-          <div className="input-group">
-            <label className="checkbox-row">
-              <input
-                className="checkbox-input"
-                type="checkbox"
-                checked={Boolean(field.multiline)}
-                onChange={(event) => onChange(field.id, 'multiline', event.target.checked)}
-              />
-              <span>Enable multiline</span>
-            </label>
-            {errors?.multiline ? <span className="error-text">{errors.multiline}</span> : null}
-          </div>
-        ) : (
-          <div className="input-group">
-            <span className="helper-text">Checkbox fields omit `multiline` from the mapped payload.</span>
-          </div>
-        )}
       </div>
     </article>
   )
