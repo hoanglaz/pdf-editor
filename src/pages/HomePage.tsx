@@ -26,7 +26,7 @@ const EMPTY_VALIDATION: TemplateValidationResult = {
 }
 
 const TEXT_FIELD_HEIGHT = 24
-const MIN_TEXT_FIELD_WIDTH = 1
+const MIN_TEXT_FIELD_WIDTH = 18 // Match checkbox width
 const MAX_TEXT_FIELD_WIDTH = 144
 const APPROX_TEXT_CHAR_WIDTH = 8
 
@@ -72,7 +72,7 @@ function createField(
     page,
     x: x ?? 80,
     y: y ?? 650,
-    width: MIN_TEXT_FIELD_WIDTH,
+    width: MIN_TEXT_FIELD_WIDTH, // default width nhỏ nhất
     height: TEXT_FIELD_HEIGHT,
     required: false,
     multiline: false,
@@ -237,7 +237,7 @@ export default function HomePage() {
                 page: pageNum - 1,
                 x,
                 y,
-                width,
+                width: type === 'TEXT' ? MIN_TEXT_FIELD_WIDTH : width,
                 height,
                 required: !!ann.required,
                 multiline: ann.multiline,
