@@ -38,7 +38,7 @@ interface PointerOperation {
   startHeight: number
 }
 
-const MIN_FIELD_SIZE = 12
+const MIN_FIELD_SIZE = 1
 const MAX_VIEWER_WIDTH = 760
 const DEFAULT_TEXT_FIELD_WIDTH = 72
 const DEFAULT_TEXT_FIELD_HEIGHT = 24
@@ -263,7 +263,11 @@ export default function PdfCanvasEditor({
                                     onSelectField(field.id)
                                   }}
                                   onKeyDown={(event) => {
-                                    if (event.key === 'Enter' || event.key === ' ') {
+                                    // Chỉ xử lý khi target KHÔNG phải là input (để input nhận space)
+                                    if (
+                                      !(event.target instanceof HTMLInputElement) &&
+                                      (event.key === 'Enter' || event.key === ' ')
+                                    ) {
                                       event.preventDefault()
                                       onSelectField(field.id)
                                     }
@@ -292,6 +296,7 @@ export default function PdfCanvasEditor({
                                     <input
                                       className="pdf-field-input"
                                       value={field.defaultValue ?? ''}
+                                      maxLength={field.maxLength ?? undefined}
                                       onClick={(event) => {
                                         event.stopPropagation()
                                         onSelectField(field.id)

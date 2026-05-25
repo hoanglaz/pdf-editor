@@ -476,7 +476,7 @@ button {
   cursor: crosshair;
 }
 
-.pdf-page-frame > .react-pdf__Page {
+.pdf-page-frame>.react-pdf__Page {
   position: relative;
   z-index: 1;
 }
@@ -510,7 +510,8 @@ button {
 }
 
 .pdf-field-overlay.text {
-  min-width: 72px;
+  /* min-width: 72px; */
+  padding: 0;
 }
 
 .pdf-field-overlay.checkbox {
@@ -593,7 +594,7 @@ button {
   color: var(--text);
 }
 
-.response-list li + li {
+.response-list li+li {
   margin-top: 6px;
 }
 
@@ -620,6 +621,7 @@ button {
 }
 
 @media (max-width: 1120px) {
+
   .page-header,
   .main-grid,
   .form-grid.two-columns {
@@ -835,8 +837,15 @@ button {
 }
 
 @keyframes hint-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
 }
 
 /* Template name input */
@@ -933,7 +942,9 @@ button {
   flex-shrink: 0;
 }
 
-.notification-close:hover { opacity: 1; }
+.notification-close:hover {
+  opacity: 1;
+}
 
 /* ── Three-panel layout ── */
 .editor-main {

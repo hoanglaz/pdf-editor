@@ -93,6 +93,7 @@ export default function FieldItem({ field, index, errors, isActive, onChange, on
           {errors?.page ? <span className="error-text">{errors.page}</span> : null}
         </div>
 
+
         <div className="input-group">
           <label className="input-label" htmlFor={`field-default-${field.id}`}>
             Default value
@@ -106,6 +107,23 @@ export default function FieldItem({ field, index, errors, isActive, onChange, on
           />
           {errors?.defaultValue ? <span className="error-text">{errors.defaultValue}</span> : null}
         </div>
+
+        {field.type === 'TEXT' && (
+          <div className="input-group">
+            <label className="input-label" htmlFor={`field-maxLength-${field.id}`}>
+              Max length
+            </label>
+            <input
+              id={`field-maxLength-${field.id}`}
+              className="text-input"
+              type="number"
+              min={1}
+              value={field.maxLength ?? ''}
+              onChange={(event) => onChange(field.id, 'maxLength', getNumericValue(event.target.value) || undefined)}
+              placeholder="No limit"
+            />
+          </div>
+        )}
 
         <div className="input-group">
           <label className="input-label" htmlFor={`field-x-${field.id}`}>

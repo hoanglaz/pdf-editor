@@ -11,6 +11,7 @@ export interface PdfField {
   required: boolean
   multiline?: boolean // always boolean for TEXT fields
   defaultValue?: string
+  maxLength?: number // Số ký tự tối đa cho TEXT field
 }
 
 export interface EditablePdfField extends PdfField {

@@ -60,6 +60,7 @@ export default function FieldProperties({ field, onChange }: FieldPropertiesProp
         </select>
       </div>
 
+
       <div className="prop-row">
         <label className="prop-label" htmlFor="prop-default">
           Default value
@@ -72,6 +73,23 @@ export default function FieldProperties({ field, onChange }: FieldPropertiesProp
           placeholder={field.type === 'CHECKBOX' ? 'true or false' : 'Optional'}
         />
       </div>
+
+      {field.type === 'TEXT' && (
+        <div className="prop-row">
+          <label className="prop-label" htmlFor="prop-maxLength">
+            Max length
+          </label>
+          <input
+            id="prop-maxLength"
+            className="prop-input"
+            type="number"
+            min={1}
+            value={field.maxLength ?? ''}
+            onChange={(e) => onChange(field.id, 'maxLength', e.target.value ? Number(e.target.value) : undefined)}
+            placeholder="No limit"
+          />
+        </div>
+      )}
 
       <hr className="prop-divider" />
 
